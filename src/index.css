@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #0A0A0B;
+  color: #F5F4EF;
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #C9A84C44;
+  color: #F5F4EF;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fadeUp 0.8s ease both;
+}
+
+.delay-1 {
+  animation-delay: 0.15s;
+}
+
+.delay-2 {
+  animation-delay: 0.3s;
+}
+
+.delay-3 {
+  animation-delay: 0.45s;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
