@@ -3,7 +3,22 @@ import promacLogo from "./assets/promaclogo.jpeg";
 import barImage from "./assets/basement-bar.jpg";
 import amphiImage from "./assets/amphitheater.jpg";
 
-const NAV_LINKS = ["Services", "Projects", "About", "Contact"];
+const NAV_LINKS = ["Services", "Projects", "Gallery", "Admin", "About", "Contact"];
+
+const GALLERY = [
+  {
+    id: 1,
+    title: "Luxury Basement Bar",
+    category: "Basement Finishing",
+    img: barImage,
+  },
+  {
+    id: 2,
+    title: "Outdoor Amphitheater",
+    category: "Outdoor Construction",
+    img: amphiImage,
+  },
+];
 
 const SERVICES = [
   {
@@ -121,6 +136,7 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", project: "", message: "" });
   const [formSent, setFormSent] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -297,6 +313,64 @@ export default function App() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── GALLERY ── */}
+      <section id="gallery" style={styles.section}>
+        <div style={styles.sectionInner}>
+          <div style={styles.sectionTag}>Our Work</div>
+          <h2 style={styles.sectionH2}>
+            Project <span style={{ color: "#C9A84C" }}>Gallery</span>
+          </h2>
+          <p style={styles.sectionSub}>A look at completed projects — click any image to view full size.</p>
+          <div style={styles.galleryGrid}>
+            {GALLERY.map((item) => (
+              <div
+                key={item.id}
+                style={styles.galleryCard}
+                className="gallery-card"
+                onClick={() => setLightbox(item)}
+              >
+                <img src={item.img} alt={item.title} style={styles.galleryImg} className="gallery-img" />
+                <div style={styles.galleryOverlay} className="gallery-overlay">
+                  <span style={styles.galleryCategory}>{item.category}</span>
+                  <span style={styles.galleryTitle}>{item.title}</span>
+                  <span style={styles.galleryZoomHint}>Click to view</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── LIGHTBOX ── */}
+      {lightbox && (
+        <div style={styles.lightboxBackdrop} onClick={() => setLightbox(null)}>
+          <div style={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+            <button style={styles.lightboxClose} onClick={() => setLightbox(null)}>✕</button>
+            <img src={lightbox.img} alt={lightbox.title} style={styles.lightboxImg} />
+            <div style={styles.lightboxInfo}>
+              <span style={styles.lightboxCategory}>{lightbox.category}</span>
+              <span style={styles.lightboxTitle}>{lightbox.title}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADMIN ── */}
+      <section id="admin" style={{ ...styles.section, background: C.surface }}>
+        <div style={styles.sectionInner}>
+          <div style={styles.sectionTag}>Admin</div>
+          <h2 style={styles.sectionH2}>
+            Site <span style={{ color: "#C9A84C" }}>Administration</span>
+          </h2>
+          <p style={styles.sectionSub}>This area is reserved for site management. More features coming soon.</p>
+          <div style={styles.adminPlaceholder}>
+            <div style={styles.adminIcon}>🔒</div>
+            <div style={styles.adminPlaceholderTitle}>Admin Panel</div>
+            <div style={styles.adminPlaceholderSub}>This section is under construction. Future features: gallery uploads, content editing, lead management.</div>
           </div>
         </div>
       </section>
@@ -606,6 +680,30 @@ const styles = {
   projectTags: { display: "flex", gap: 8, flexWrap: "wrap" },
   tag: { background: `${C.gold}18`, color: C.goldLight, border: `1px solid ${C.gold}33`, fontSize: 11, padding: "4px 12px", borderRadius: 2, letterSpacing: 0.5 },
 
+  // GALLERY
+  galleryGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(480px, 1fr))", gap: 24 },
+  galleryCard: { position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, cursor: "pointer", aspectRatio: "16/10" },
+  galleryImg: { width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease" },
+  galleryOverlay: { position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "24px", opacity: 0, transition: "opacity 0.3s ease" },
+  galleryCategory: { background: C.gold, color: C.bg, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "4px 12px", borderRadius: 2, alignSelf: "flex-start", marginBottom: 8 },
+  galleryTitle: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 6 },
+  galleryZoomHint: { fontSize: 12, color: C.muted, letterSpacing: 1 },
+
+  // ADMIN
+  adminPlaceholder: { maxWidth: 480, margin: "0 auto", textAlign: "center", padding: "60px 40px", background: C.card, borderRadius: 12, border: `1px solid ${C.border}` },
+  adminIcon: { fontSize: 48, marginBottom: 20 },
+  adminPlaceholderTitle: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 12 },
+  adminPlaceholderSub: { fontSize: 14, color: C.muted, lineHeight: 1.7 },
+
+  // LIGHTBOX
+  lightboxBackdrop: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
+  lightboxContent: { position: "relative", maxWidth: 1100, width: "100%", background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, overflow: "hidden", boxShadow: "0 40px 80px rgba(0,0,0,0.8)" },
+  lightboxClose: { position: "absolute", top: 16, right: 16, zIndex: 10, background: "rgba(0,0,0,0.6)", border: `1px solid ${C.border}`, color: C.white, borderRadius: "50%", width: 36, height: 36, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
+  lightboxImg: { width: "100%", maxHeight: "75vh", objectFit: "contain", display: "block", background: "#000" },
+  lightboxInfo: { padding: "20px 24px", display: "flex", alignItems: "center", gap: 16 },
+  lightboxCategory: { background: C.gold, color: C.bg, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "4px 12px", borderRadius: 2 },
+  lightboxTitle: { fontSize: 18, fontWeight: 700, color: C.white },
+
   // ABOUT
   aboutSection: { padding: "100px 32px", overflow: "hidden" },
   aboutInner: { maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" },
@@ -681,6 +779,9 @@ const cssString = `
 
   .form-input:focus { border-color: #C9A84C !important; box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
   .form-input option { background: #111113; color: #F5F4EF; }
+
+  .gallery-card:hover .gallery-img { transform: scale(1.06); }
+  .gallery-card:hover .gallery-overlay { opacity: 1 !important; }
 
   .hero-img-card:hover { transform: rotate(0deg) scale(1.02) !important; transition: transform 0.4s ease; }
   .about-img { transition: transform 0.5s ease; }
