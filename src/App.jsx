@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import promacLogo from "./assets/promaclogo.jpeg";
 import barImage from "./assets/basement-bar.jpg";
 import amphiImage from "./assets/amphitheater.jpg";
@@ -409,7 +409,7 @@ export default function App() {
               <img src={barImage} alt="Basement bar project" style={styles.aboutImg1} className="about-img" />
               <img src={amphiImage} alt="Amphitheater project" style={styles.aboutImg2} className="about-img" />
               <div style={styles.aboutBadge}>
-                <div style={styles.logoCircle} style={{ width: 90, height: 90 }}>
+                <div style={{ ...styles.logoCircle, width: 90, height: 90 }}>
                   <img src={promacLogo} alt="ProMac" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               </div>
