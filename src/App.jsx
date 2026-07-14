@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import promacLogo from "./assets/promaclogo.jpeg";
 import barImage from "./assets/basement-bar.jpg";
 import amphiImage from "./assets/amphitheater.jpg";
+import Estimator from "./Estimator";
 
-const NAV_LINKS = ["Services", "Projects", "Gallery", "Admin", "About", "Contact"];
+const NAV_LINKS = ["Services", "Projects", "Gallery", "Estimator", "About", "Contact"];
 
 const GALLERY = [
   {
@@ -359,19 +360,15 @@ export default function App() {
         </div>
       )}
 
-      {/* ── ADMIN ── */}
-      <section id="admin" style={{ ...styles.section, background: C.surface }}>
+      {/* ── ESTIMATOR ── */}
+      <section id="estimator" style={{ ...styles.section, background: C.surface }}>
         <div style={styles.sectionInner}>
-          <div style={styles.sectionTag}>Admin</div>
+          <div style={styles.sectionTag}>Contractor Tool</div>
           <h2 style={styles.sectionH2}>
-            Site <span style={{ color: "#C9A84C" }}>Administration</span>
+            Raw Material <span style={{ color: "#C9A84C" }}>Estimator</span>
           </h2>
-          <p style={styles.sectionSub}>This area is reserved for site management. More features coming soon.</p>
-          <div style={styles.adminPlaceholder}>
-            <div style={styles.adminIcon}>🔒</div>
-            <div style={styles.adminPlaceholderTitle}>Admin Panel</div>
-            <div style={styles.adminPlaceholderSub}>This section is under construction. Future features: gallery uploads, content editing, lead management.</div>
-          </div>
+          <p style={styles.sectionSub}>Answer a few questions about the project's rooms, electrical, plumbing, and insulation needs to get a preliminary material and circuit estimate.</p>
+          <Estimator />
         </div>
       </section>
 
@@ -688,12 +685,6 @@ const styles = {
   galleryCategory: { background: C.gold, color: C.bg, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "4px 12px", borderRadius: 2, alignSelf: "flex-start", marginBottom: 8 },
   galleryTitle: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 6 },
   galleryZoomHint: { fontSize: 12, color: C.muted, letterSpacing: 1 },
-
-  // ADMIN
-  adminPlaceholder: { maxWidth: 480, margin: "0 auto", textAlign: "center", padding: "60px 40px", background: C.card, borderRadius: 12, border: `1px solid ${C.border}` },
-  adminIcon: { fontSize: 48, marginBottom: 20 },
-  adminPlaceholderTitle: { fontSize: 22, fontWeight: 700, color: C.white, marginBottom: 12 },
-  adminPlaceholderSub: { fontSize: 14, color: C.muted, lineHeight: 1.7 },
 
   // LIGHTBOX
   lightboxBackdrop: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
