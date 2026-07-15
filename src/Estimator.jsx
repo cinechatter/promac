@@ -491,6 +491,50 @@ export default function Estimator() {
               <div style={s.totalNum}>{result.totals.insulationSqft}</div>
               <div style={s.totalLabel}>Insulation (sq ft)</div>
             </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.wire14_2Ft + result.totals.wire12_2Ft + result.totals.wire240Ft}</div>
+              <div style={s.totalLabel}>Wire (linear ft)</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.wireStaples}</div>
+              <div style={s.totalLabel}>Cable Staples</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.switchCount}</div>
+              <div style={s.totalLabel}>Switches</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.outletPlates}</div>
+              <div style={s.totalLabel}>Outlet Plates</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.baseboardLinearFt}</div>
+              <div style={s.totalLabel}>Baseboard (linear ft)</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.casingLinearFt}</div>
+              <div style={s.totalLabel}>Door/Window Trim (ft)</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.drywallScrewBoxes}</div>
+              <div style={s.totalLabel}>Drywall Screw Boxes</div>
+            </div>
+            <div style={s.totalCard}>
+              <div style={s.totalNum}>{result.totals.caulkTubes + result.totals.adhesiveTubes}</div>
+              <div style={s.totalLabel}>Caulk + Adhesive Tubes</div>
+            </div>
+            {result.totals.vaporBarrierSqft > 0 && (
+              <div style={s.totalCard}>
+                <div style={s.totalNum}>{result.totals.vaporBarrierSqft}</div>
+                <div style={s.totalLabel}>Vapor Barrier (sq ft)</div>
+              </div>
+            )}
+            {result.totals.houseWrapSqft > 0 && (
+              <div style={s.totalCard}>
+                <div style={s.totalNum}>{result.totals.houseWrapSqft}</div>
+                <div style={s.totalLabel}>House Wrap (sq ft)</div>
+              </div>
+            )}
             {result.totals.roofSquares > 0 && (
               <>
                 {(result.totals.concreteSqft > 0 || result.totals.footingLinearFt > 0 || result.totals.piers > 0) && (
@@ -560,6 +604,37 @@ export default function Estimator() {
                     <div style={s.resultItemLabel}>Insulation</div>
                     {r.insulationSqft} sq ft
                   </div>
+                  <div style={s.resultItem}>
+                    <div style={s.resultItemLabel}>Wire</div>
+                    {r.wire14_2Ft > 0 && `${r.wire14_2Ft} ft 14/2`}
+                    {r.wire14_2Ft > 0 && r.wire12_2Ft > 0 && " · "}
+                    {r.wire12_2Ft > 0 && `${r.wire12_2Ft} ft 12/2`}
+                    {r.wire240Ft > 0 && ` · ${r.wire240Ft} ft 240V`}
+                  </div>
+                  <div style={s.resultItem}>
+                    <div style={s.resultItemLabel}>Staples / Switches / Plates</div>
+                    {r.wireStaples} staples · {r.switchCount} switches · {r.outletPlates} plates
+                  </div>
+                  <div style={s.resultItem}>
+                    <div style={s.resultItemLabel}>Baseboard & Trim</div>
+                    {r.baseboardLinearFt} ft base · {r.casingLinearFt} ft casing
+                  </div>
+                  <div style={s.resultItem}>
+                    <div style={s.resultItemLabel}>Fasteners & Sealant</div>
+                    {r.drywallScrewBoxes} screw box(es) · {r.caulkTubes} caulk · {r.adhesiveTubes} adhesive
+                  </div>
+                  {r.vaporBarrierSqft > 0 && (
+                    <div style={s.resultItem}>
+                      <div style={s.resultItemLabel}>Vapor Barrier</div>
+                      {r.vaporBarrierSqft} sq ft
+                    </div>
+                  )}
+                  {r.houseWrapSqft > 0 && (
+                    <div style={s.resultItem}>
+                      <div style={s.resultItemLabel}>House Wrap</div>
+                      {r.houseWrapSqft} sq ft
+                    </div>
+                  )}
                   {r.addition && (
                     <>
                       <div style={s.resultItem}>
