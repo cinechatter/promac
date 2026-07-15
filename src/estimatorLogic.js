@@ -41,6 +41,19 @@ const SQFT_PER_TON_AC = 500; // rule of thumb: 400-600 sqft per ton, use midpoin
 const ROOF_AREA_FACTOR = { shed: 1.05, gable: 1.15, flat: 1.02 }; // overhang + pitch allowance
 const WINDOW_SQFT = 12; // typical 3'x4' window, for glazing/heat-load estimate
 
+// Fastener / trim / wiring rules of thumb
+const DRYWALL_SCREWS_PER_SHEET = 32; // ~1 screw/sqft at 7"/12" o.c. spacing
+const SCREWS_PER_BOX = 190; // typical 1lb box of drywall screws
+const DOOR_TRIM_FT = 17; // casing linear ft per standard interior door (2 legs + head)
+const WINDOW_TRIM_FT = 14; // casing linear ft per window
+const CAULK_COVERAGE_FT = 30; // linear ft of joint per tube
+const ADHESIVE_PER_SHEETS = 6; // 1 tube of construction adhesive per N drywall sheets
+const ADHESIVE_PER_TRIM_FT = 25; // 1 tube of adhesive per N ft of baseboard/trim
+const WIRE_DEVICE_RUN_FT = 15; // avg device-to-device wire run
+const WIRE_HOME_RUN_FT = 25; // avg breaker-to-first-device run
+const WIRE_STAPLE_SPACING_FT = 3; // cable staple every N ft along framing
+const DEVICES_PER_CIRCUIT = 6; // ~6 general-purpose devices per 15A/20A circuit
+
 // Home Depot has no public product-lookup API, so we can't reliably link a
 // specific SKU/price (it would go stale or be wrong). Instead we link to a
 // live Home Depot search results page for the material — always current.
@@ -236,6 +249,58 @@ export function estimateRoom(room) {
     };
   }
 
+  // Drywall fasteners
+  const drywallScrews = drywallSheets * DRYWALL_SCREWS_PER_SHEET;
+  const drywallScrewBoxes = Math.ceil(drywallScrews / SCREWS_PER_BOX);
+
+  // Trim & baseboard (perimeter minus ~1 door width, +10% waste)
+  const baseboardLinearFt = Math.ceil(Math.max(perimeter - 3, 0) * 1.1);
+  const doorTrimLinearFt = area > 0 ? DOOR_TRIM_FT : 0;
+  const windowTrimLinearFt = addition ? addition.windowCount * WINDOW_TRIM_FT : 0;
+  const casingLinearFt = doorTrimLinearFt + windowTrimLinearFt; // door + window casing only, excludes baseboard
+  const trimLinearFt = baseboardLinearFt + casingLinearFt; // combined, used for caulk coverage
+
+  // Caulk & construction adhesive
+  const caulkTubes = area > 0 ? Math.ceil(trimLinearFt / CAULK_COVERAGE_FT) : 0;
+  const adhesiveTubes = area > 0 ? Math.ceil(drywallSheets / ADHESIVE_PER_SHEETS) + Math.ceil(baseboardLinearFt / ADHESIVE_PER_TRIM_FT) : 0;
+
+  // Vapor barrier (below-grade/basement) and exterior weather barrier (new additions, same sqft as siding)
+  const vaporBarrierSqft = room.type === "Basement" ? Math.ceil(wallArea) : 0;
+  const houseWrapSqft = addition ? addition.sidingSqft : 0;
+
+  // Switches & device cover plates
+  const numLightFixtures = Number(canLights) + Number(chandeliers) + Number(regularFixtures);
+  const switchCount = (Number(canLights) > 0 ? 1 : 0) + (Number(chandeliers) > 0 ? 1 : 0) + (Number(regularFixtures) > 0 ? 1 : 0);
+  const switchPlates = switchCount;
+  const outletPlates = generalOutlets + counterOutlets + dedicatedCircuits.length;
+
+  // Romex wire runs, split by gauge/amp rating
+  const dedicated120 = dedicatedCircuits.filter((c) => c.volt === 120);
+  const dedicated240 = dedicatedCircuits.filter((c) => c.volt === 240);
+
+  const circuits15A = generalOutletAmp === 15 ? Math.ceil(generalOutlets / DEVICES_PER_CIRCUIT) : 0;
+  let wire14_2Ft = generalOutletAmp === 15 ? generalOutlets * WIRE_DEVICE_RUN_FT + circuits15A * WIRE_HOME_RUN_FT : 0;
+
+  const circuits20A = generalOutletAmp === 20 ? Math.ceil((generalOutlets + counterOutlets) / DEVICES_PER_CIRCUIT) : counterOutlets > 0 ? Math.ceil(counterOutlets / DEVICES_PER_CIRCUIT) : 0;
+  let wire12_2Ft = (generalOutletAmp === 20 ? generalOutlets * WIRE_DEVICE_RUN_FT : 0) + counterOutlets * WIRE_DEVICE_RUN_FT + circuits20A * WIRE_HOME_RUN_FT;
+
+  dedicated120.forEach((c) => {
+    const runFt = WIRE_HOME_RUN_FT + 5;
+    if (c.amp === 15) wire14_2Ft += runFt;
+    else wire12_2Ft += runFt;
+  });
+
+  // Lighting: fixtures daisy-chained back to a switch, switch back to the panel (assume 15A/14-2)
+  if (numLightFixtures > 0) {
+    wire14_2Ft += numLightFixtures * WIRE_DEVICE_RUN_FT + Math.max(switchCount, 1) * WIRE_HOME_RUN_FT;
+  }
+
+  const wire240Ft = dedicated240.length * (WIRE_HOME_RUN_FT + 10); // heavier gauge (6/3 or 10/3), single home run each
+
+  wire14_2Ft = Math.ceil(wire14_2Ft);
+  wire12_2Ft = Math.ceil(wire12_2Ft);
+  const wireStaples = Math.ceil((wire14_2Ft + wire12_2Ft + wire240Ft) / WIRE_STAPLE_SPACING_FT);
+
   // Home Depot shopping links (live search results, not pinned SKUs)
   const shopLinks = [];
   shopLinks.push(hdLink("Drywall Sheets (4x8)", "4x8 drywall sheet"));
@@ -280,6 +345,21 @@ export function estimateRoom(room) {
 
   shopLinks.push(hdLink("Insulation", room.insulation === "soundproof" ? "mineral wool soundproof insulation" : insulationType.includes("R-21") ? "R-21 fiberglass insulation batt" : "R-13 fiberglass insulation batt"));
 
+  shopLinks.push(hdLink("Drywall Screws", "drywall screws"));
+  shopLinks.push(hdLink("Baseboard", "baseboard molding"));
+  shopLinks.push(hdLink("Door/Window Trim", "interior door casing trim"));
+  shopLinks.push(hdLink("Caulk", "paintable caulk"));
+  shopLinks.push(hdLink("Construction Adhesive", "construction adhesive"));
+  if (vaporBarrierSqft > 0) shopLinks.push(hdLink("Vapor Barrier", "6 mil vapor barrier plastic sheeting"));
+  if (houseWrapSqft > 0) shopLinks.push(hdLink("House Wrap / Weather Barrier", "house wrap weather barrier"));
+  if (wire14_2Ft > 0) shopLinks.push(hdLink("14/2 NM-B Wire (15A)", "14/2 romex wire"));
+  if (wire12_2Ft > 0) shopLinks.push(hdLink("12/2 NM-B Wire (20A)", "12/2 romex wire"));
+  if (wire240Ft > 0) shopLinks.push(hdLink("240V Appliance Wire", "10/3 romex wire"));
+  if (wireStaples > 0) shopLinks.push(hdLink("Cable Staples", "wire cable staples"));
+  if (switchCount > 0) shopLinks.push(hdLink("Light Switches", "light switch"));
+  if (switchPlates > 0) shopLinks.push(hdLink("Switch Plates", "switch wall plate"));
+  if (outletPlates > 0) shopLinks.push(hdLink("Outlet Plates", "outlet wall plate"));
+
   if (addition) {
     if (addition.concreteSqft > 0) shopLinks.push(hdLink("Concrete Mix (Slab)", "concrete mix bag"));
     if (addition.piers > 0) shopLinks.push(hdLink("Deck/Pier Blocks", "concrete deck pier block"));
@@ -318,6 +398,24 @@ export function estimateRoom(room) {
     isAddition,
     addition,
     shopLinks,
+    drywallScrews,
+    drywallScrewBoxes,
+    baseboardLinearFt,
+    doorTrimLinearFt,
+    windowTrimLinearFt,
+    casingLinearFt,
+    trimLinearFt,
+    caulkTubes,
+    adhesiveTubes,
+    vaporBarrierSqft,
+    houseWrapSqft,
+    switchCount,
+    switchPlates,
+    outletPlates,
+    wire14_2Ft,
+    wire12_2Ft,
+    wire240Ft,
+    wireStaples,
   };
 }
 
@@ -336,6 +434,20 @@ export function estimateProject(rooms, totalArea) {
       acc.newCircuits += r.totalNewCircuits;
       acc.acTons += r.acTons;
       acc.insulationSqft += r.insulationSqft;
+      acc.drywallScrewBoxes += r.drywallScrewBoxes;
+      acc.baseboardLinearFt += r.baseboardLinearFt;
+      acc.casingLinearFt += r.casingLinearFt;
+      acc.trimLinearFt += r.trimLinearFt;
+      acc.caulkTubes += r.caulkTubes;
+      acc.adhesiveTubes += r.adhesiveTubes;
+      acc.vaporBarrierSqft += r.vaporBarrierSqft;
+      acc.houseWrapSqft += r.houseWrapSqft;
+      acc.switchCount += r.switchCount;
+      acc.outletPlates += r.outletPlates;
+      acc.wire14_2Ft += r.wire14_2Ft;
+      acc.wire12_2Ft += r.wire12_2Ft;
+      acc.wire240Ft += r.wire240Ft;
+      acc.wireStaples += r.wireStaples;
       if (r.addition) {
         acc.concreteSqft += r.addition.concreteSqft;
         acc.footingLinearFt += r.addition.footingLinearFt;
@@ -357,6 +469,20 @@ export function estimateProject(rooms, totalArea) {
       newCircuits: 0,
       acTons: 0,
       insulationSqft: 0,
+      drywallScrewBoxes: 0,
+      baseboardLinearFt: 0,
+      casingLinearFt: 0,
+      trimLinearFt: 0,
+      caulkTubes: 0,
+      adhesiveTubes: 0,
+      vaporBarrierSqft: 0,
+      houseWrapSqft: 0,
+      switchCount: 0,
+      outletPlates: 0,
+      wire14_2Ft: 0,
+      wire12_2Ft: 0,
+      wire240Ft: 0,
+      wireStaples: 0,
       concreteSqft: 0,
       footingLinearFt: 0,
       piers: 0,
