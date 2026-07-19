@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ROOM_TYPES, makeEmptyRoom, estimateProject, ADDITION_ROOM_TYPE, FOUNDATION_TYPES, ROOF_TYPES } from "./estimatorLogic";
+
+const MAX_FLOOR_PLAN_MB = 15;
 
 const C = {
   bg: "#0A0A0B",
@@ -67,6 +69,18 @@ const s = {
   panelBox: { background: `${C.accent2}18`, border: `1px solid ${C.accent2}55`, borderRadius: 8, padding: "18px 20px", fontSize: 13, color: C.white, lineHeight: 1.6, marginBottom: 24 },
   disclaimer: { fontSize: 12, color: C.muted, lineHeight: 1.7, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "16px 20px", marginTop: 8 },
   restartBtn: { background: "transparent", color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 6, padding: "12px 24px", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" },
+  uploadZone: { border: `1px dashed ${C.border}`, borderRadius: 8, padding: "24px", textAlign: "center", cursor: "pointer", background: C.surface },
+  uploadIcon: { fontSize: 24, marginBottom: 8 },
+  uploadText: { fontSize: 13, color: C.white, fontWeight: 600, marginBottom: 4 },
+  uploadHint: { fontSize: 12, color: C.muted },
+  floorPlanCard: { display: "flex", alignItems: "center", gap: 16, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "14px 16px" },
+  floorPlanThumb: { width: 64, height: 64, borderRadius: 6, objectFit: "cover", border: `1px solid ${C.border}`, flexShrink: 0 },
+  floorPlanIconBox: { width: 64, height: 64, borderRadius: 6, background: C.card, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 },
+  floorPlanName: { fontSize: 13, fontWeight: 600, color: C.white, marginBottom: 2, wordBreak: "break-all" },
+  floorPlanMeta: { fontSize: 12, color: C.muted },
+  floorPlanRemove: { marginLeft: "auto", background: "none", border: `1px solid ${C.border}`, color: C.muted, borderRadius: 4, padding: "6px 12px", fontSize: 12, cursor: "pointer", flexShrink: 0 },
+  floorPlanFullImg: { maxWidth: "100%", maxHeight: 420, borderRadius: 8, border: `1px solid ${C.border}`, display: "block" },
+  floorPlanError: { fontSize: 12, color: "#E8837A", marginTop: 8 },
 };
 
 const STEP_LABELS = ["Project", "Rooms", "Details", "Estimate"];
@@ -78,6 +92,49 @@ export default function Estimator() {
   const [activeRoomIdx, setActiveRoomIdx] = useState(0);
   const [nextId, setNextId] = useState(2);
   const [result, setResult] = useState(null);
+  const [floorPlan, setFloorPlan] = useState(null); // { file, previewUrl, isImage, name, sizeLabel }
+  const [floorPlanError, setFloorPlanError] = useState("");
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (floorPlan?.previewUrl) URL.revokeObjectURL(floorPlan.previewUrl);
+    };
+  }, [floorPlan]);
+
+  const handleFloorPlanChange = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    setFloorPlanError("");
+
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+    if (!isImage && !isPdf) {
+      setFloorPlanError("Please upload an image (JPG, PNG, etc.) or a PDF.");
+      return;
+    }
+    if (file.size > MAX_FLOOR_PLAN_MB * 1024 * 1024) {
+      setFloorPlanError(`File is too large — please keep it under ${MAX_FLOOR_PLAN_MB}MB.`);
+      return;
+    }
+
+    if (floorPlan?.previewUrl) URL.revokeObjectURL(floorPlan.previewUrl);
+    setFloorPlan({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      isImage,
+      name: file.name,
+      sizeLabel: file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.ceil(file.size / 1024)} KB`,
+    });
+  };
+
+  const removeFloorPlan = () => {
+    if (floorPlan?.previewUrl) URL.revokeObjectURL(floorPlan.previewUrl);
+    setFloorPlan(null);
+    setFloorPlanError("");
+  };
 
   const updateRoom = (id, patch) => setRooms((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const updateRoomDeep = (id, key, patch) => setRooms((rs) => rs.map((r) => (r.id === id ? { ...r, [key]: { ...r[key], ...patch } } : r)));
@@ -109,6 +166,7 @@ export default function Estimator() {
     setNextId(2);
     setActiveRoomIdx(0);
     setResult(null);
+    removeFloorPlan();
     setStep(0);
   };
 
@@ -140,6 +198,36 @@ export default function Estimator() {
               onChange={(e) => setTotalArea(e.target.value)}
             />
           </div>
+
+          <div style={s.formGroup}>
+            <label style={s.label}>Floor Plan (optional)</label>
+            <input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={handleFloorPlanChange} style={{ display: "none" }} />
+            {!floorPlan ? (
+              <div style={s.uploadZone} onClick={() => fileInputRef.current?.click()}>
+                <div style={s.uploadIcon}>📐</div>
+                <div style={s.uploadText}>Upload a 2D or 3D Floor Plan</div>
+                <div style={s.uploadHint}>Image or PDF — sketch, blueprint, or exported render. Max {MAX_FLOOR_PLAN_MB}MB.</div>
+              </div>
+            ) : (
+              <div style={s.floorPlanCard}>
+                {floorPlan.isImage ? (
+                  <img src={floorPlan.previewUrl} alt="Floor plan preview" style={s.floorPlanThumb} />
+                ) : (
+                  <div style={s.floorPlanIconBox}>📄</div>
+                )}
+                <div>
+                  <div style={s.floorPlanName}>{floorPlan.name}</div>
+                  <div style={s.floorPlanMeta}>{floorPlan.sizeLabel}</div>
+                </div>
+                <button style={s.floorPlanRemove} onClick={removeFloorPlan}>
+                  Remove
+                </button>
+              </div>
+            )}
+            {floorPlanError && <div style={s.floorPlanError}>{floorPlanError}</div>}
+            <p style={s.smallNote}>Stays in this browser tab for your current session only — it isn't uploaded or saved anywhere.</p>
+          </div>
+
           <div style={s.btnRow}>
             <div />
             <button
@@ -457,6 +545,26 @@ export default function Estimator() {
           <div style={s.stepTag}>Step 4 of 4</div>
           <h3 style={s.stepTitle}>Preliminary Material Estimate</h3>
           <p style={s.stepSub}>Based on {result.totalArea} sq ft across {result.rooms.length} room(s).</p>
+
+          {floorPlan && (
+            <div style={{ ...s.resultSection }}>
+              <div style={s.resultHead}>Attached Floor Plan</div>
+              {floorPlan.isImage ? (
+                <img src={floorPlan.previewUrl} alt="Floor plan" style={s.floorPlanFullImg} />
+              ) : (
+                <div style={s.floorPlanCard}>
+                  <div style={s.floorPlanIconBox}>📄</div>
+                  <div>
+                    <div style={s.floorPlanName}>{floorPlan.name}</div>
+                    <div style={s.floorPlanMeta}>{floorPlan.sizeLabel}</div>
+                  </div>
+                  <a href={floorPlan.previewUrl} target="_blank" rel="noreferrer" style={{ ...s.floorPlanRemove, textDecoration: "none" }}>
+                    Open PDF
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={s.totalsGrid}>
             <div style={s.totalCard}>

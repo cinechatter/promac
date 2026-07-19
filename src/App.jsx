@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import promacLogo from "./assets/promaclogo.jpeg";
 import barImage from "./assets/basement-bar.jpg";
 import amphiImage from "./assets/amphitheater.jpg";
-import Estimator from "./Estimator";
 
-const NAV_LINKS = ["Services", "Projects", "Gallery", "Estimator", "About", "Contact"];
+const NAV_LINKS = ["Services", "Projects", "Gallery", "About", "Contact"];
 
 const GALLERY = [
   {
@@ -359,18 +358,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* ── ESTIMATOR ── */}
-      <section id="estimator" style={{ ...styles.section, background: C.surface }}>
-        <div style={styles.sectionInner}>
-          <div style={styles.sectionTag}>Contractor Tool</div>
-          <h2 style={styles.sectionH2}>
-            Raw Material <span style={{ color: "#C9A84C" }}>Estimator</span>
-          </h2>
-          <p style={styles.sectionSub}>Answer a few questions about the project's rooms, electrical, plumbing, and insulation needs to get a preliminary material and circuit estimate.</p>
-          <Estimator />
-        </div>
-      </section>
 
       {/* ── ABOUT ── */}
       <section id="about" style={styles.aboutSection}>
